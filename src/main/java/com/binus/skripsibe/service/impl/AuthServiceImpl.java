@@ -7,6 +7,8 @@ import com.binus.skripsibe.repository.UserRepository;
 import com.binus.skripsibe.security.JwtUtils;
 import com.binus.skripsibe.service.AuthService;
 import com.binus.skripsibe.service.RoleService;
+import com.binus.skripsibe.service.UserService;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,11 +31,16 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtils jwtUtils;
     private final RoleService roleService;
 
+    private UserService userService;
+
     @Override
+    @Transactional
     public UserDTO register(AuthRequest user) {
         Role role = roleService.getOrSave(ERole.ROLE_USER);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         User save = appUserRepository.save(new User(null, user.getUsername(), user.getPassword(), Collections.singletonList(role)));
+        user.getUserDetail().setUserId(save);
+        userService.addUserDetail(user.getUserDetail());
         return new UserDTO(save);
 
     }
